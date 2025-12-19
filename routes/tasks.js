@@ -3,14 +3,14 @@ const router = express.Router();
 const pool = require('../db');
 
 // Create a new task
-router.post('/create ', async (req, res) => {
-  const { user_id, pickup_address, drop_address, task_time, estimated_time, description, amount } = req.body;
+router.post('/create', async (req, res) => {  // removed extra space in route
+  const { user_id, pickup_address, drop_address, task_time, estimated_time, description, amount, pickup_type } = req.body;
 
   try {
     const result = await pool.query(
-      `INSERT INTO tasks (user_id, pickup_address, drop_address, task_time, estimated_time, description, amount) 
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [user_id, pickup_address, drop_address, task_time, estimated_time, description, amount]
+      `INSERT INTO tasks (user_id, pickup_address, drop_address, task_time, estimated_time, description, amount, pickup_type) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [user_id, pickup_address, drop_address, task_time, estimated_time, description, amount, pickup_type]
     );
     res.json({ task: result.rows[0] });
   } catch (err) {

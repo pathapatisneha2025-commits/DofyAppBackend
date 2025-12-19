@@ -33,16 +33,18 @@ router.post('/register', async (req, res) => {
 });
 
 // ------------------- LOGIN -------------------
+// routes/auth.js
 router.post('/login', async (req, res) => {
-  const { phone, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!phone || !password) {
-    return res.status(400).json({ success: false, message: 'Phone and password are required' });
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password are required' });
   }
 
   try {
-    const userRes = await pool.query('SELECT * FROM customers WHERE phone=$1', [phone]);
-    if (userRes.rows.length === 0) return res.status(400).json({ success: false, message: 'User not found' });
+    const userRes = await pool.query('SELECT * FROM customers WHERE email=$1', [email]);
+    if (userRes.rows.length === 0)
+      return res.status(400).json({ success: false, message: 'User not found' });
 
     const user = userRes.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
@@ -59,14 +61,15 @@ router.post('/login', async (req, res) => {
         address2: user.address2,
         city: user.city,
         state: user.state,
-        pincode: user.pincode
-      }
+        pincode: user.pincode,
+      },
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
 
 // ------------------- GET ALL CUSTOMERS -------------------
 router.get('/all', async (req, res) => {

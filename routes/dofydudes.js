@@ -68,4 +68,19 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+// ------------------- GET ALL DOFY DUDES -------------------
+router.get('/all', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, phone, email, selfie, govID, kyc_approved FROM dofy_dudes ORDER BY id DESC');
+    
+    res.json({
+      success: true,
+      dofyDudes: result.rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 module.exports = router;

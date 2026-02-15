@@ -25,9 +25,9 @@ router.get('/my/:user_id', async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT t.*, u.name AS dofy_dude_name 
+      `SELECT t.*, d.name AS dofy_dude_name 
        FROM tasks t 
-       LEFT JOIN users u ON t.dofy_dude_id = u.id
+       LEFT JOIN dofy_dudes d ON t.dofy_dude_id = d.id
        WHERE t.user_id=$1 
        ORDER BY t.task_time DESC`,
       [user_id]
@@ -39,14 +39,15 @@ router.get('/my/:user_id', async (req, res) => {
   }
 });
 
+
 // Get all tasks (for Dofy Dudes home page)
 router.get('/all', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT t.*, u.name AS customer_name 
+      `SELECT t.*, c.name AS customer_name 
        FROM tasks t 
-       LEFT JOIN users u ON t.user_id = u.id
-       WHERE t.status='PENDING'
+       LEFT JOIN customers c ON t.user_id = c.id
+       WHERE t.status='pending'
        ORDER BY t.task_time ASC`
     );
     res.json({ tasks: result.rows });
@@ -55,6 +56,7 @@ router.get('/all', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 // Mark a task as completed
 router.post('/complete/:id', async (req, res) => {

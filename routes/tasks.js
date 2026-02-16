@@ -70,6 +70,34 @@ router.post('/complete/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+// Get single task with live locations
+router.get('/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT t.*, 
+              c.name AS customer_name,
+              d.name AS dofy_dude_name
+       FROM tasks t
+       LEFT JOIN customers c ON t.user_id = c.id
+       LEFT JOIN dofy_dudes d ON t.dofy_dude_id = d.id
+       WHERE t.id = $1`,
+      [taskId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.json({ task: result.rows[0] });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 // Leave feedback on a task
 router.post('/feedback/:id', async (req, res) => {

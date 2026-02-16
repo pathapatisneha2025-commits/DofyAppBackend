@@ -44,10 +44,9 @@ router.get('/my/:user_id', async (req, res) => {
 router.get('/all', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT t.*, c.name AS customer_name 
-       FROM tasks t 
+      `SELECT t.*, c.name AS customer_name
+       FROM tasks t
        LEFT JOIN customers c ON t.user_id = c.id
-       WHERE t.status='pending'
        ORDER BY t.task_time ASC`
     );
     res.json({ tasks: result.rows });
@@ -56,6 +55,7 @@ router.get('/all', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 
 // Mark a task as completed

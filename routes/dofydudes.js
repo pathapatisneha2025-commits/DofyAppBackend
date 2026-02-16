@@ -82,5 +82,32 @@ router.get('/all', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+// ------------------- GET DOFY DUDE BY ID -------------------
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'ID is required' });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT id, name, phone, email, selfie, govID, kyc_approved FROM dofy_dudes WHERE id=$1',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dofy Dude not found' });
+    }
+
+    res.json({
+      success: true,
+      user: result.rows[0],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 module.exports = router;

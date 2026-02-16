@@ -140,4 +140,32 @@ router.post('/accept/:taskId', async (req, res) => {
     res.status(500).json({ message: 'Server error while accepting task' });
   }
 });
+router.post('/update-customer-location/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  const { lat, lng } = req.body;
+
+  await pool.query(
+    `UPDATE tasks 
+     SET customer_lat=$1, customer_lng=$2 
+     WHERE id=$3`,
+    [lat, lng, taskId]
+  );
+
+  res.json({ success: true });
+});
+
+router.post('/update-agent-location/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  const { lat, lng } = req.body;
+
+  await pool.query(
+    `UPDATE tasks 
+     SET agent_lat=$1, agent_lng=$2 
+     WHERE id=$3`,
+    [lat, lng, taskId]
+  );
+
+  res.json({ success: true });
+});
+
 module.exports = router;

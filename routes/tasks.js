@@ -117,10 +117,14 @@ router.post('/feedback/:id', async (req, res) => {
 });
 router.post('/accept/:taskId', async (req, res) => {
   const { taskId } = req.params;
-  const { dofy_dude_id } = req.body;
+  const { dofy_dude_id, amount } = req.body; // receive amount
 
   if (!dofy_dude_id) {
     return res.status(400).json({ message: 'Agent ID is required' });
+  }
+
+  if (amount === undefined || isNaN(amount)) {
+    return res.status(400).json({ message: 'Valid amount is required' });
   }
 
   try {
@@ -148,13 +152,13 @@ router.post('/accept/:taskId', async (req, res) => {
       return res.status(400).json({ message: 'Task already accepted' });
     }
 
-    // Update task
+    // Update task with status, agent info, and new fare
     const updateResult = await pool.query(
       `UPDATE tasks
-       SET status = 'Accepted', dofy_dude_id = $1, dofy_dude_name = $2
-       WHERE id = $3
+       SET status = 'Accepted', dofy_dude_id = $1, dofy_dude_name = $2, amount = $3
+       WHERE id = $4
        RETURNING *`,
-      [dofy_dude_id, dofy_dude_name, taskId]
+      [dofy_dude_id, dofy_dude_name, amount, taskId]
     );
 
     const updatedTask = updateResult.rows[0];
@@ -168,6 +172,7 @@ router.post('/accept/:taskId', async (req, res) => {
     res.status(500).json({ message: 'Server error while accepting task' });
   }
 });
+
 router.post('/update-customer-location/:taskId', async (req, res) => {
   const { taskId } = req.params;
   const { lat, lng } = req.body;

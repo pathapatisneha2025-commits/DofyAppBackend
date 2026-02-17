@@ -201,4 +201,58 @@ router.post('/update-agent-location/:taskId', async (req, res) => {
   res.json({ success: true });
 });
 
+
+// PUT /dofydudestask/assign/:id
+router.put("/assign/:id", async (req, res) => {
+  const { id } = req.params;
+  const { dofy_dude_id, dofy_dude_name } = req.body;
+
+  if (!dofy_dude_id || !dofy_dude_name) {
+    return res.status(400).json({ success: false, message: "Partner ID and name required" });
+  }
+
+  try {
+    const result = await pool.query(
+      "UPDATE tasks SET dofy_dude_id=$1, dofy_dude_name=$2, status='Accepted' WHERE id=$3 RETURNING *",
+      [dofy_dude_id, dofy_dude_name, id]
+    );
+    res.json({ success: true, task: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+// Update task status (Admin approval/rejection)
+router.put("/update/:id", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; // 'Approved' or 'Rejected'
+
+  if (!status) {
+    return res.status(400).json({ success: false, message: "Status required" });
+  }
+
+  try {
+    // Only allow updating Completed tasks
+    const taskCheck = await pool.query("SELECT status FROM tasks WHERE id=$1", [id]);
+    if (taskCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Task not found" });
+    }
+
+    if (taskCheck.rows[0].status !== "Completed") {
+      return res.status(400).json({ success: false, message: "Only completed tasks can be approved/rejected" });
+    }
+
+    const result = await pool.query(
+      "UPDATE tasks SET status=$1 WHERE id=$2 RETURNING *",
+      [status, id]
+    );
+    res.json({ success: true, task: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 module.exports = router;

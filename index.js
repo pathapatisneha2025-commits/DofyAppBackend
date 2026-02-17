@@ -3,6 +3,7 @@ const cors = require("cors");
 const Customers = require("./routes/Customer");
 const DofyDudes= require("./routes/dofydudes");
 const DofyDudeTasks= require("./routes/tasks");
+const ChatMessages= require("./routes/chat");
 
 
 
@@ -14,7 +15,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/customer", Customers);
 app.use("/dofydudes", DofyDudes);
-app.use("/dofydudestask", DofyDudeTasks);
+app.use("/dofydudestask",DofyDudeTasks);
+app.use("/chatmessages",ChatMessages);
 
 
 

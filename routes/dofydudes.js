@@ -157,5 +157,39 @@ router.put('/update/:id', async (req, res) => {
   }
 });
 
+// ------------------- UPDATE KYC STATUS -------------------
+router.post('/:id/kyc', async (req, res) => {
+  const { id } = req.params;
+  const { kyc_approved } = req.body; // true or false
+
+  if (typeof kyc_approved !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'kyc_approved must be boolean' });
+  }
+
+  try {
+    // Check if Dofy Dude exists
+    const userRes = await pool.query('SELECT * FROM dofy_dudes WHERE id=$1', [id]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dofy Dude not found' });
+    }
+
+    // Update KYC status
+    const updateRes = await pool.query(
+      'UPDATE dofy_dudes SET kyc_approved=$1 WHERE id=$2 RETURNING id, name, phone, email, selfie, govID, kyc_approved',
+      [kyc_approved, id]
+    );
+
+    res.json({
+      success: true,
+      message: `KYC ${kyc_approved ? 'approved' : 'rejected'} successfully`,
+      user: updateRes.rows[0],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
 
 module.exports = router;

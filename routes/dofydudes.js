@@ -110,4 +110,52 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// ------------------- UPDATE DOFY DUDE -------------------
+router.put('/update/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, password, selfie, govID } = req.body;
+
+  if (!id || !name || !phone) {
+    return res.status(400).json({ success: false, message: 'ID, name, and phone are required' });
+  }
+
+  try {
+    // Check if user exists
+    const userRes = await pool.query('SELECT * FROM dofy_dudes WHERE id=$1', [id]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dofy Dude not found' });
+    }
+
+    // Prepare fields to update
+    const updates = [];
+    const values = [];
+    let idx = 1;
+
+    if (name) { updates.push(`name=$${idx++}`); values.push(name); }
+    if (phone) { updates.push(`phone=$${idx++}`); values.push(phone); }
+    if (selfie) { updates.push(`selfie=$${idx++}`); values.push(selfie); }
+    if (govID) { updates.push(`govID=$${idx++}`); values.push(govID); }
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updates.push(`password=$${idx++}`);
+      values.push(hashedPassword);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    values.push(id); // For WHERE clause
+
+    const query = `UPDATE dofy_dudes SET ${updates.join(', ')} WHERE id=$${idx} RETURNING id, name, phone, email, selfie, govID, kyc_approved`;
+    const updatedRes = await pool.query(query, values);
+
+    res.json({ success: true, user: updatedRes.rows[0], message: 'Profile updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
 module.exports = router;

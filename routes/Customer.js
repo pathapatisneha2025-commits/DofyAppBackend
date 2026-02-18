@@ -146,6 +146,40 @@ router.put("/status/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+router.get("/message/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // 🔹 Get all tasks for this customer
+    const tasksRes = await pool.query(
+      "SELECT id FROM tasks WHERE user_id = $1",
+      [userId]
+    );
+
+    if (tasksRes.rows.length === 0) {
+      return res.json({ success: true, messages: [] });
+    }
+
+    const taskIds = tasksRes.rows.map((t) => t.id);
+
+    // 🔹 Fetch all messages sent by customer for these tasks, newest first
+    const messagesRes = await pool.query(
+      `SELECT m.id, m.task_id, m.sender_type, m.sender_id, m.message, m.created_at,
+              t.pickup_address, t.drop_address
+       FROM messages m
+       JOIN tasks t ON t.id = m.task_id
+       WHERE m.task_id = ANY($1) AND m.sender_type = 'customer'
+       ORDER BY m.created_at DESC`,
+      [taskIds]
+    );
+
+    res.json({ success: true, messages: messagesRes.rows });
+  } catch (err) {
+    console.error("Error fetching customer messages:", err);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+});
+
 
 
 module.exports = router;

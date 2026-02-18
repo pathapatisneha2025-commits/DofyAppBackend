@@ -38,7 +38,7 @@ router.get('/receive/:taskId', async (req, res) => {
           WHEN cm.sender_type = 'agent' THEN dd.name
           WHEN cm.sender_type = 'customer' THEN cu.name
         END AS sender_name
-      FROM chat_messages cm
+      FROM messages m
       LEFT JOIN dofy_dudes dd
         ON cm.sender_id = dd.id AND cm.sender_type = 'agent'
       LEFT JOIN customers cu

@@ -260,7 +260,10 @@ router.put('/complete/:id', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE tasks 
-       SET status = 'Completed', feedback = $1, payment_status = 'Paid'
+       SET status = 'Completed',
+           feedback = $1,
+           payment_status = 'Paid',
+           completed_at = NOW()
        WHERE id = $2
        RETURNING *`,
       [feedback, taskId]
@@ -275,6 +278,7 @@ router.put('/complete/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 
 

@@ -162,13 +162,23 @@ router.get("/messages/:userId", async (req, res) => {
 
     const taskIds = tasksRes.rows.map((t) => t.id);
 
-    // 🔹 Fetch only messages sent by agent for these tasks
+    // 🔹 Fetch messages sent by agent along with agent name
     const messagesRes = await pool.query(
-      `SELECT m.id, m.task_id, m.sender_type, m.sender_id, m.message AS text, m.created_at,
-              t.pickup_address, t.drop_address
+      `SELECT 
+         m.id, 
+         m.task_id, 
+         m.sender_type, 
+         m.sender_id, 
+         m.message AS text, 
+         m.created_at,
+         t.pickup_address, 
+         t.drop_address,
+         a.name AS agent_name
        FROM messages m
        JOIN tasks t ON t.id = m.task_id
-       WHERE m.task_id = ANY($1) AND m.sender_type = 'agent'
+       JOIN dofy_dudes a ON a.id = m.sender_id
+       WHERE m.task_id = ANY($1) 
+         AND m.sender_type = 'agent'
        ORDER BY m.created_at DESC`,
       [taskIds]
     );
@@ -179,6 +189,7 @@ router.get("/messages/:userId", async (req, res) => {
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
+
 
 
 

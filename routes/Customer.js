@@ -130,4 +130,22 @@ router.delete('/delete/:id', async (req, res) => {
   }
 });
 
+router.put("/status/:id", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const result = await pool.query(
+      "UPDATE customers SET status=$1 WHERE id=$2 RETURNING *",
+      [status, id]
+    );
+
+    res.json({ success: true, customer: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
 module.exports = router;

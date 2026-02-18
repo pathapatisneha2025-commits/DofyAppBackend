@@ -27,23 +27,30 @@ router.post('/send', async (req, res) => {
   }
 });
 
-// --- Get all messages for a task ---
 router.get('/receive/:taskId', async (req, res) => {
   const { taskId } = req.params;
 
   try {
-    const result = await pool.query(
-      `SELECT *
-       FROM messages
-       WHERE task_id = $1
-       ORDER BY created_at ASC`,
-      [taskId]
-    );
+    const result = await pool.query(`
+      SELECT 
+        cm.*,
+        CASE 
+          WHEN cm.sender_type = 'agent' THEN dd.name
+          WHEN cm.sender_type = 'customer' THEN cu.name
+        END AS sender_name
+      FROM chat_messages cm
+      LEFT JOIN dofy_dudes dd
+        ON cm.sender_id = dd.id AND cm.sender_type = 'agent'
+      LEFT JOIN customers cu
+        ON cm.sender_id = cu.id AND cm.sender_type = 'customer'
+      WHERE cm.task_id = $1
+      ORDER BY cm.created_at ASC
+    `, [taskId]);
 
     res.json({ messages: result.rows });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error fetching messages' });
+    console.log(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

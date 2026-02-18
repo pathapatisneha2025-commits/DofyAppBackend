@@ -5,7 +5,7 @@ const pool = require('../db'); // PostgreSQL pool connection
 
 
 // ------------------- GET PRICING -------------------
-router.get('/pricing', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT * FROM pricing_settings WHERE id=$1',

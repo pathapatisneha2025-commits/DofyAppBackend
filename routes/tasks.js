@@ -117,18 +117,14 @@ router.post('/feedback/:id', async (req, res) => {
 });
 router.post('/accept/:taskId', async (req, res) => {
   const { taskId } = req.params;
-  const { dofy_dude_id, amount } = req.body; // receive amount
+  const { dofy_dude_id } = req.body; // removed amount
 
   if (!dofy_dude_id) {
     return res.status(400).json({ message: 'Agent ID is required' });
   }
 
-  if (amount === undefined || isNaN(amount)) {
-    return res.status(400).json({ message: 'Valid amount is required' });
-  }
-
   try {
-    // Get the dofy dude name from dofy_dudes table
+    // Get the dofy dude name
     const agentResult = await pool.query(
       'SELECT name FROM dofy_dudes WHERE id = $1',
       [dofy_dude_id]
@@ -141,7 +137,11 @@ router.post('/accept/:taskId', async (req, res) => {
     const dofy_dude_name = agentResult.rows[0].name;
 
     // Check if task exists
-    const taskResult = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
+    const taskResult = await pool.query(
+      'SELECT * FROM tasks WHERE id = $1',
+      [taskId]
+    );
+
     if (taskResult.rows.length === 0) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -152,26 +152,32 @@ router.post('/accept/:taskId', async (req, res) => {
       return res.status(400).json({ message: 'Task already accepted' });
     }
 
-    // Update task with status, agent info, and new fare
+    // ✅ Update WITHOUT touching amount
     const updateResult = await pool.query(
       `UPDATE tasks
-       SET status = 'Accepted', dofy_dude_id = $1, dofy_dude_name = $2, amount = $3
-       WHERE id = $4
+       SET status = 'Accepted',
+           dofy_dude_id = $1,
+           dofy_dude_name = $2
+       WHERE id = $3
        RETURNING *`,
-      [dofy_dude_id, dofy_dude_name, amount, taskId]
+      [dofy_dude_id, dofy_dude_name, taskId]
     );
 
     const updatedTask = updateResult.rows[0];
 
-    // Optional: notify customer via Socket.io
-    // io.to(task.user_id).emit('taskAccepted', updatedTask);
+    res.json({
+      message: 'Task accepted successfully',
+      task: updatedTask
+    });
 
-    res.json({ message: 'Task accepted successfully', task: updatedTask });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error while accepting task' });
+    res.status(500).json({
+      message: 'Server error while accepting task'
+    });
   }
 });
+
 
 router.post('/update-customer-location/:taskId', async (req, res) => {
   const { taskId } = req.params;

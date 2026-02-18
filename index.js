@@ -4,6 +4,8 @@ const Customers = require("./routes/Customer");
 const DofyDudes= require("./routes/dofydudes");
 const DofyDudeTasks= require("./routes/tasks");
 const ChatMessages= require("./routes/chat");
+const AdminPricing= require("./routes/Pricingkm");
+
 
 
 
@@ -17,6 +19,7 @@ app.use("/customer", Customers);
 app.use("/dofydudes", DofyDudes);
 app.use("/dofydudestask",DofyDudeTasks);
 app.use("/chatmessages",ChatMessages);
+app.use("/adminpricing",AdminPricing);
 
 
 

@@ -33,18 +33,18 @@ router.get('/receive/:taskId', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        cm.*,
+        m.*,
         CASE 
-          WHEN cm.sender_type = 'agent' THEN dd.name
-          WHEN cm.sender_type = 'customer' THEN cu.name
+          WHEN m.sender_type = 'agent' THEN dd.name
+          WHEN m.sender_type = 'customer' THEN cu.name
         END AS sender_name
       FROM messages m
       LEFT JOIN dofy_dudes dd
-        ON cm.sender_id = dd.id AND cm.sender_type = 'agent'
+        ON m.sender_id = dd.id AND m.sender_type = 'agent'
       LEFT JOIN customers cu
-        ON cm.sender_id = cu.id AND cm.sender_type = 'customer'
-      WHERE cm.task_id = $1
-      ORDER BY cm.created_at ASC
+        ON m.sender_id = cu.id AND m.sender_type = 'customer'
+      WHERE m.task_id = $1
+      ORDER BY m.created_at ASC
     `, [taskId]);
 
     res.json({ messages: result.rows });

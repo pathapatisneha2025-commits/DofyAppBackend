@@ -252,6 +252,30 @@ router.put("/update/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+// routes/dofyDudesTask.js
+router.put('/complete/:id', async (req, res) => {
+  const taskId = req.params.id;
+  const { feedback } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE tasks 
+       SET status = 'Completed', feedback = $1, payment_status = 'Paid'
+       WHERE id = $2
+       RETURNING *`,
+      [feedback, taskId]
+    );
+
+    if (result.rowCount === 0)
+      return res.status(404).json({ message: 'Task not found' });
+
+    res.json({ success: true, task: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 
 module.exports = router;

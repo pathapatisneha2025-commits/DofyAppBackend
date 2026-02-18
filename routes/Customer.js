@@ -146,7 +146,7 @@ router.put("/status/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-router.get("/message/:userId", async (req, res) => {
+router.get("/messages/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
@@ -162,23 +162,25 @@ router.get("/message/:userId", async (req, res) => {
 
     const taskIds = tasksRes.rows.map((t) => t.id);
 
-    // 🔹 Fetch all messages sent by customer for these tasks, newest first
+    // 🔹 Fetch only messages sent by agent for these tasks
     const messagesRes = await pool.query(
-      `SELECT m.id, m.task_id, m.sender_type, m.sender_id, m.message, m.created_at,
+      `SELECT m.id, m.task_id, m.sender_type, m.sender_id, m.message AS text, m.created_at,
               t.pickup_address, t.drop_address
        FROM messages m
        JOIN tasks t ON t.id = m.task_id
-       WHERE m.task_id = ANY($1) AND m.sender_type = 'customer'
+       WHERE m.task_id = ANY($1) AND m.sender_type = 'agent'
        ORDER BY m.created_at DESC`,
       [taskIds]
     );
 
     res.json({ success: true, messages: messagesRes.rows });
   } catch (err) {
-    console.error("Error fetching customer messages:", err);
+    console.error("Error fetching agent messages:", err);
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
+
+
 
 
 

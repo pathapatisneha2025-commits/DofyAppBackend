@@ -37,19 +37,52 @@ router.post('/register', async (req, res) => {
 
 // ------------------- LOGIN -------------------
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body; // Login with email
+  const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ success: false, message: 'Email and password are required' });
+    return res.status(400).json({
+      success: false,
+      message: 'Email and password are required'
+    });
   }
 
   try {
-    const userRes = await pool.query('SELECT * FROM dofy_dudes WHERE email=$1', [email]);
-    if (userRes.rows.length === 0) return res.status(400).json({ success: false, message: 'User not found' });
+
+    const userRes = await pool.query(
+      'SELECT * FROM dofy_dudes WHERE email=$1',
+      [email.trim().toLowerCase()]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
 
     const user = userRes.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ success: false, message: 'Incorrect password' });
+
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect password'
+      });
+    }
+
+
+    // CHECK KYC APPROVAL
+    if (user.kyc_approved !== true) {
+      return res.status(403).json({
+        success: false,
+        message: 'KYC not approved. Please wait for admin approval.'
+      });
+    }
+
 
     res.json({
       success: true,
@@ -63,9 +96,15 @@ router.post('/login', async (req, res) => {
         kyc_approved: user.kyc_approved,
       },
     });
+
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 });
 // ------------------- GET ALL DOFY DUDES -------------------

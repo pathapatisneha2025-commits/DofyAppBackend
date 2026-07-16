@@ -185,15 +185,24 @@ router.post('/accept/:taskId', async (req, res) => {
     }
 
     // ✅ Update WITHOUT touching amount
-    const updateResult = await pool.query(
-      `UPDATE tasks
-       SET status = 'Accepted',
-           dofy_dude_id = $1,
-           dofy_dude_name = $2
-       WHERE id = $3
-       RETURNING *`,
-      [dofy_dude_id, dofy_dude_name, taskId]
-    );
+const updateResult = await pool.query(
+`
+UPDATE tasks
+SET 
+ status = 'Accepted',
+ dofy_dude_id = $1,
+ dofy_dude_name = $2,
+ accepted_at = NOW(),
+ started_at = NOW()
+WHERE id = $3
+RETURNING *
+`,
+[
+ dofy_dude_id,
+ dofy_dude_name,
+ taskId
+]
+);
 
     const updatedTask = updateResult.rows[0];
 
@@ -209,7 +218,100 @@ router.post('/accept/:taskId', async (req, res) => {
     });
   }
 });
+router.post('/user-complete/:id',async(req,res)=>{
 
+const id=req.params.id;
+
+
+await pool.query(
+`
+UPDATE tasks
+SET user_completed=true
+WHERE id=$1
+`,
+[id]
+);
+
+
+res.json({
+success:true
+});
+
+
+});
+router.post('/dofy-complete/:id',async(req,res)=>{
+
+const id=req.params.id;
+
+
+const result=await pool.query(
+`
+UPDATE tasks
+SET 
+dofy_completed=true
+WHERE id=$1
+RETURNING *
+`,
+[id]
+);
+
+
+const task=result.rows[0];
+
+
+// Both completed
+if(
+ task.user_completed &&
+ task.dofy_completed
+){
+
+ const start=new Date(task.started_at);
+
+ const end=new Date();
+
+
+ const minutes=Math.ceil(
+ (end-start)/(1000*60)
+ );
+
+
+ let hourlyRate =
+ task.pickup_type==="Urgent"
+ ?249
+ :149;
+
+
+ let amount =
+ 99 + ((minutes/60)*hourlyRate);
+
+
+
+ await pool.query(
+ `
+ UPDATE tasks
+ SET
+ status='Completed',
+ completed_at=NOW(),
+ actual_duration_minutes=$1,
+ final_amount=$2,
+ payment_status='Pending'
+ WHERE id=$3
+ `,
+ [
+ minutes,
+ amount.toFixed(0),
+ id
+ ]);
+
+}
+
+
+res.json({
+success:true
+});
+
+
+});
 
 router.post('/update-customer-location/:taskId', async (req, res) => {
   const { taskId } = req.params;

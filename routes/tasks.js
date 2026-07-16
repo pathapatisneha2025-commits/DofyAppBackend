@@ -225,7 +225,7 @@ const {feedback,payment_id}=req.body;
 await pool.query(
 
 `
-UPDATE dofy_tasks
+UPDATE tasks
 SET
 
 user_completed=true,

@@ -4,6 +4,7 @@ const pool = require('../db');
 
 // Create a new task
 router.post('/create', async (req, res) => {
+
   const {
     user_id,
     pickup_address,
@@ -13,11 +14,23 @@ router.post('/create', async (req, res) => {
     description,
     amount,
     pickup_type,
-    task_type   // ✅ added
+    task_type,
+
+    // ADD THESE
+    task_mode,
+    priority,
+    online_category,
+
+    payment_mode,
+    payment_id
+
   } = req.body;
 
+
   try {
+
     const result = await pool.query(
+
       `INSERT INTO tasks (
         user_id,
         pickup_address,
@@ -27,11 +40,27 @@ router.post('/create', async (req, res) => {
         description,
         amount,
         pickup_type,
-        task_type
+        task_type,
+
+        task_mode,
+        priority,
+        online_category,
+
+        payment_mode,
+        payment_id
+
       ) 
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,
+        $10,$11,$12,
+        $13,$14
+      )
+
       RETURNING *`,
+
       [
+
         user_id,
         pickup_address,
         drop_address,
@@ -40,15 +69,37 @@ router.post('/create', async (req, res) => {
         description,
         amount,
         pickup_type,
-        task_type   // ✅ added
+        task_type,
+
+        // NEW VALUES
+        task_mode,
+        priority,
+        online_category,
+
+        payment_mode,
+        payment_id
+
       ]
+
     );
 
-    res.json({ task: result.rows[0] });
-  } catch (err) {
+
+    res.json({
+      success:true,
+      task: result.rows[0]
+    });
+
+
+  } catch(err){
+
     console.log(err);
-    res.status(500).json({ message: 'Server error' });
+
+    res.status(500).json({
+      message:"Server error"
+    });
+
   }
+
 });
 
 // Get tasks of a user

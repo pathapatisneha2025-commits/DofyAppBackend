@@ -239,77 +239,121 @@ success:true
 
 
 });
-router.post('/dofy-complete/:id',async(req,res)=>{
+router.post('/dofy-complete/:id', async(req,res)=>{
 
-const id=req.params.id;
+const taskId = req.params.id;
 
+try {
 
-const result=await pool.query(
+const taskResult = await pool.query(
 `
-UPDATE tasks
-SET 
-dofy_completed=true
+SELECT *
+FROM tasks
 WHERE id=$1
-RETURNING *
 `,
-[id]
+[taskId]
 );
 
 
-const task=result.rows[0];
+if(taskResult.rows.length === 0){
+ return res.status(404).json({
+  message:"Task not found"
+ });
+}
 
 
-// Both completed
-if(
- task.user_completed &&
- task.dofy_completed
-){
-
- const start=new Date(task.started_at);
-
- const end=new Date();
+const task = taskResult.rows[0];
 
 
- const minutes=Math.ceil(
- (end-start)/(1000*60)
- );
+// completion time
+const completedAt = new Date();
 
 
- let hourlyRate =
- task.pickup_type==="Urgent"
- ?249
- :149;
+// calculate duration
+const startTime = new Date(task.started_at);
+
+const durationMinutes = Math.ceil(
+ (completedAt - startTime) / 60000
+);
 
 
- let amount =
- 99 + ((minutes/60)*hourlyRate);
+// calculate fare
+let finalAmount = 0;
 
 
+if(task.task_mode === "Offline"){
 
- await pool.query(
- `
- UPDATE tasks
- SET
- status='Completed',
- completed_at=NOW(),
- actual_duration_minutes=$1,
- final_amount=$2,
- payment_status='Pending'
- WHERE id=$3
- `,
- [
- minutes,
- amount.toFixed(0),
- id
- ]);
+ const baseFee = 99;
+
+ const hourlyRate =
+ task.priority === "Urgent"
+ ? 249
+ : 149;
+
+
+ finalAmount =
+ baseFee + ((durationMinutes / 60) * hourlyRate);
 
 }
 
 
+// round amount
+finalAmount = Math.round(finalAmount);
+
+
+
+const result = await pool.query(
+
+`
+UPDATE tasks
+
+SET
+dofy_completed=true,
+completed_at=$1,
+actual_duration_minutes=$2,
+final_amount=$3,
+status='Completed'
+
+WHERE id=$4
+
+RETURNING *
+
+`,
+
+[
+ completedAt,
+ durationMinutes,
+ finalAmount,
+ taskId
+]
+
+);
+
+
+
 res.json({
-success:true
+
+success:true,
+
+message:"Task completed successfully",
+
+task:result.rows[0]
+
 });
 
+
+}
+catch(err){
+
+console.log(err);
+
+res.status(500).json({
+
+message:"Server error"
+
+});
+
+}
 
 });
 

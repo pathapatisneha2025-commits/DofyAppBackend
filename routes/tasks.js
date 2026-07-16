@@ -218,25 +218,44 @@ RETURNING *
     });
   }
 });
-router.post('/user-complete/:id',async(req,res)=>{
+router.post("/user-complete/:id", async (req,res)=>{
 
-const id=req.params.id;
-
+const {feedback,payment_id}=req.body;
 
 await pool.query(
+
 `
-UPDATE tasks
-SET user_completed=true
-WHERE id=$1
+UPDATE dofy_tasks
+SET
+
+user_completed=true,
+
+feedback=$1,
+
+payment_status='Paid',
+
+payment_id=$2,
+
+status='Completed',
+
+completed_at=NOW()
+
+WHERE id=$3
 `,
-[id]
+
+[
+feedback,
+payment_id,
+req.params.id
+]
+
 );
 
-
 res.json({
-success:true
-});
 
+success:true
+
+});
 
 });
 router.post('/dofy-complete/:id', async(req,res)=>{

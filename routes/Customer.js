@@ -94,7 +94,61 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+// ------------------- FORGOT PASSWORD -------------------
 
+router.put('/forgot-password', async (req, res) => {
+
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "Email and new password are required"
+    });
+  }
+
+  try {
+
+    const user = await pool.query(
+      "SELECT id FROM customers WHERE email=$1",
+      [email]
+    );
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Email not registered"
+      });
+    }
+
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+
+    await pool.query(
+      "UPDATE customers SET password=$1 WHERE email=$2",
+      [hashedPassword, email]
+    );
+
+
+    res.json({
+      success: true,
+      message: "Password updated successfully"
+    });
+
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+
+  }
+
+});
 // ------------------- UPDATE CUSTOMER -------------------
 router.put('/update/:id', async (req, res) => {
   const { id } = req.params;

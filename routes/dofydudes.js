@@ -195,7 +195,70 @@ router.put('/update/:id', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+// ------------------- FORGOT PASSWORD -------------------
 
+router.put('/forgot-password', async (req, res) => {
+
+  const { email, newPassword } = req.body;
+
+
+  if (!email || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "Email and new password are required"
+    });
+  }
+
+
+  try {
+
+    // Check user exists
+    const user = await pool.query(
+      "SELECT id FROM dofy_dudes WHERE email=$1",
+      [email.trim().toLowerCase()]
+    );
+
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Email not registered"
+      });
+    }
+
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+
+    // Update password
+    await pool.query(
+      "UPDATE dofy_dudes SET password=$1 WHERE email=$2",
+      [
+        hashedPassword,
+        email.trim().toLowerCase()
+      ]
+    );
+
+
+    res.json({
+      success: true,
+      message: "Password updated successfully"
+    });
+
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+
+  }
+
+});
 // ------------------- UPDATE KYC STATUS -------------------
 router.post('/:id/kyc', async (req, res) => {
   const { id } = req.params;
